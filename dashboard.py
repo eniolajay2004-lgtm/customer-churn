@@ -21,7 +21,7 @@ st.markdown(
         background-color: #f4f6f9;
     }
     .header {
-        background-color: #0a3d62;
+        background-color: #0C2C55;
         padding: 25px;
         border-radius: 10px;
         margin-bottom: 30px;
@@ -60,32 +60,28 @@ st.markdown(
 df = load_data()
 
 # -------------------------------
-# SIDEBAR FILTERS
+# Sidebar Filters
 # -------------------------------
 st.sidebar.header("🔎 Filter Options")
 
-# State filter
 states = st.sidebar.multiselect(
     "Select State",
     options=sorted(df["State"].unique()),
     default=sorted(df["State"].unique())
 )
 
-# Subscription Plan filter
 plans = st.sidebar.multiselect(
     "Select Subscription Plan",
     options=sorted(df["Subscription Plan"].unique()),
     default=sorted(df["Subscription Plan"].unique())
 )
 
-# Device filter
 devices = st.sidebar.multiselect(
     "Select MTN Device",
     options=sorted(df["MTN Device"].unique()),
     default=sorted(df["MTN Device"].unique())
 )
 
-# Churn status filter
 churn_status = st.sidebar.multiselect(
     "Select Churn Status",
     options=sorted(df["Customer Churn Status"].unique()),
@@ -103,7 +99,7 @@ filtered_df = df[
 ]
 
 # -------------------------------
-# Metrics (Filtered Data)
+# Metrics
 # -------------------------------
 metrics = get_metrics(filtered_df)
 
@@ -115,21 +111,58 @@ col3.metric("Churn Rate (%)", metrics["churn_rate"])
 col4.metric("Avg Tenure (Months)", metrics["average_tenure"])
 col5.metric("Total Revenue", metrics["total_revenue"])
 
-# -------------------------------
-# Monthly Churn Chart (Filtered)
-# -------------------------------
+# ======================================================
+# 📊 CHURN BY SUBSCRIPTION PLAN (BAR CHART)
+# ======================================================
+st.subheader("📊 Churn by Subscription Plan")
+
+churn_by_plan = (
+    filtered_df[filtered_df["Customer Churn Status"] == "Yes"]
+    .groupby("Subscription Plan")
+    .size()
+)
+
+fig1, ax1 = plt.subplots()
+churn_by_plan.plot(kind="bar", ax=ax1)
+ax1.set_xlabel("Subscription Plan")
+ax1.set_ylabel("Number of Churned Customers")
+ax1.set_title("Churned Customers by Subscription Plan")
+plt.xticks(rotation=45)
+
+st.pyplot(fig1)
+
+# ======================================================
+# 🥧 CHURN DISTRIBUTION (PIE CHART)
+# ======================================================
+st.subheader("🥧 Churn Distribution")
+
+churn_distribution = filtered_df["Customer Churn Status"].value_counts()
+
+fig2, ax2 = plt.subplots()
+ax2.pie(
+    churn_distribution,
+    labels=churn_distribution.index,
+    autopct="%1.1f%%",
+    startangle=90
+)
+ax2.set_title("Customer Churn Distribution")
+
+st.pyplot(fig2)
+
+# ======================================================
+# 📉 Monthly Churn Trend
+# ======================================================
 st.subheader("📉 Monthly Customer Churn")
 
 monthly_churn = get_monthly_churn(filtered_df)
 
-fig, ax = plt.subplots()
-ax.plot(monthly_churn.index, monthly_churn.values, marker="o")
-ax.set_xlabel("Month")
-ax.set_ylabel("Customers Leaving")
-ax.set_title("Customers Leaving Per Month")
-plt.xticks(rotation=45)
+fig3, ax3 = plt.subplots()
+ax3.plot(monthly_churn.index, monthly_churn.values, marker="o")
+ax3.set_xlabel("Month")
+ax3.set_ylabel("Customers Leaving")
+ax3.set_title("Customers Leaving Per Month")
 
-st.pyplot(fig)
+st.pyplot(fig3)
 
 # -------------------------------
 # Dataset Preview
