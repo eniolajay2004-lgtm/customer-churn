@@ -9,7 +9,7 @@ from backend import load_data, get_metrics, get_monthly_churn
 st.set_page_config(page_title="MTN Churn Analytics", layout="wide")
 
 # -------------------------------
-# 🌓 Theme Toggle Logic (Sidebar Bottom)
+# 🌓 Theme Toggle Logic
 # -------------------------------
 if 'theme' not in st.session_state:
     st.session_state.theme = 'Light'
@@ -24,11 +24,13 @@ if st.session_state.theme == 'Dark':
     text_color = "#FFFFFF"
     card_bg = "#1E1E1E"
     border_color = "#333333"
+    chart_text = "white"
 else:
     bg_color = "#FFFFFF"
     text_color = "#111111"
     card_bg = "#F8F9FA"
     border_color = "#E0E0E0"
+    chart_text = "black"
 
 st.markdown(f"""
     <style>
@@ -53,10 +55,6 @@ st.markdown(f"""
         border-left: 5px solid {accent_green};
     }}
     div[data-testid="stMetricValue"] {{ color: {accent_green} !important; }}
-    label[data-testid="stMetricLabel"] {{ color: {text_color} !important; opacity: 0.8; }}
-    
-    /* Navigation Style */
-    .stRadio > label {{ color: {text_color} !important; font-weight: bold; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -80,9 +78,9 @@ with st.sidebar:
     # Page Navigation
     page = st.radio("Navigation", ["📊 Dashboard", "🔍 Predictions", "📋 Raw Data"])
     
-    st.vsplit() # Spacer
-    
-    # 🌓 Theme Toggle at the bottom
+    # 🌓 Theme Toggle at the very bottom
+    # We use empty space to push the toggle down
+    for _ in range(15): st.write("") 
     st.markdown("---")
     theme_choice = st.toggle("🌙 Dark Mode", value=(st.session_state.theme == 'Dark'))
     st.session_state.theme = 'Dark' if theme_choice else 'Light'
@@ -94,7 +92,7 @@ df = load_data()
 # 📊 Dashboard Page
 # -------------------------------
 if page == "📊 Dashboard":
-    # Sidebar Filters (Dashboard specific)
+    # Sidebar Filters
     with st.sidebar:
         st.subheader("🔎 Filters")
         states = st.multiselect("State", sorted(df["State"].unique()), default=sorted(df["State"].unique())[:5])
@@ -116,22 +114,21 @@ if page == "📊 Dashboard":
     
     with col_a:
         st.subheader("Churn by Plan")
-        # FIXED: Using exact CSV column names
+        # Ensure we use exact column names from CSV
         sub_churn = filtered_df.groupby(['Subscription Plan', 'Customer Churn Status']).size().unstack(fill_value=0)
         
         fig1, ax1 = plt.subplots(facecolor=bg_color)
         sub_churn.plot(kind='bar', stacked=True, ax=ax1, color=['#333333', accent_green])
         ax1.set_facecolor(bg_color)
-        ax1.tick_params(colors=text_color)
-        ax1.xaxis.label.set_color(text_color)
-        ax1.yaxis.label.set_color(text_color)
+        ax1.tick_params(colors=chart_text)
+        for spine in ax1.spines.values(): spine.set_edgecolor(border_color)
         st.pyplot(fig1)
 
     with col_b:
         st.subheader("Churn Proportion")
         dist = filtered_df["Customer Churn Status"].value_counts()
         fig2, ax2 = plt.subplots(facecolor=bg_color)
-        ax2.pie(dist, labels=dist.index, autopct="%1.1f%%", colors=[accent_green, '#f0f2f6'], textprops={'color': text_color})
+        ax2.pie(dist, labels=dist.index, autopct="%1.1f%%", colors=[accent_green, '#f0f2f6'], textprops={'color': chart_text})
         st.pyplot(fig2)
 
     # Monthly Trend
@@ -139,14 +136,13 @@ if page == "📊 Dashboard":
     monthly = get_monthly_churn(filtered_df)
     fig3, ax3 = plt.subplots(figsize=(10, 3), facecolor=bg_color)
     ax3.bar(monthly.index.astype(str), monthly.values, color=accent_green)
-    ax3.set_facecolor(card_bg)
-    ax3.tick_params(colors=text_color)
+    ax3.set_facecolor(bg_color)
+    ax3.tick_params(colors=chart_text)
     st.pyplot(fig3)
 
 elif page == "🔍 Predictions":
     st.title("Predictive Modeling")
     st.warning("Logistic Regression Model: Active")
-    st.write("Below are customers flagged as high-risk based on satisfaction rates.")
     high_risk = df[df["Satisfaction Rate"] <= 2]
     st.dataframe(high_risk[["Full Name", "Subscription Plan", "Satisfaction Rate", "Total Revenue"]], use_container_width=True)
 
