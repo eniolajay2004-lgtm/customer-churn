@@ -4,145 +4,152 @@ import matplotlib.pyplot as plt
 from backend import load_data, get_metrics, get_monthly_churn
 
 # -------------------------------
-# 🎨 Page Configuration & Styling
+# 🎨 Page Configuration
 # -------------------------------
 st.set_page_config(page_title="MTN Churn Analytics", layout="wide")
 
-# Custom CSS for Industry Standard Look (Green, White, Black)
-st.markdown("""
+# -------------------------------
+# 🌓 Theme Toggle Logic (Sidebar Bottom)
+# -------------------------------
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'Light'
+
+# -------------------------------
+# 🪄 CSS Styling (Green Accent + Dynamic Theme)
+# -------------------------------
+accent_green = "#00A651"
+
+if st.session_state.theme == 'Dark':
+    bg_color = "#121212"
+    text_color = "#FFFFFF"
+    card_bg = "#1E1E1E"
+    border_color = "#333333"
+else:
+    bg_color = "#FFFFFF"
+    text_color = "#111111"
+    card_bg = "#F8F9FA"
+    border_color = "#E0E0E0"
+
+st.markdown(f"""
     <style>
-    :set_root {
-        --main-green: #00A651;
-        --dark-bg: #111111;
-    }
-    .stApp { background-color: #FFFFFF; }
+    .stApp {{ background-color: {bg_color}; color: {text_color}; }}
+    [data-testid="stSidebar"] {{ background-color: {bg_color}; border-right: 1px solid {border_color}; }}
     
-    /* Top Navigation Bar */
-    .top-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 20px;
-        background-color: white;
-        border-bottom: 2px solid #f0f2f6;
-        margin-bottom: 25px;
-    }
-    .user-pill {
-        background-color: #00A651;
-        color: white;
-        padding: 5px 15px;
-        border-radius: 50px;
-        font-weight: bold;
-        font-size: 14px;
-    }
-    .greeting { font-size: 24px; font-weight: bold; color: #111111; }
+    /* Header Section */
+    .top-header {{
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 15px 25px; background-color: {bg_color};
+        border-bottom: 2px solid {accent_green}; margin-bottom: 20px;
+    }}
+    .greeting {{ font-size: 22px; font-weight: bold; color: {text_color}; }}
+    .user-pill {{
+        background-color: {accent_green}; color: white;
+        padding: 6px 16px; border-radius: 20px; font-weight: 600; font-size: 13px;
+    }}
     
-    /* Metric Cards */
-    div[data-testid="stMetricValue"] { color: #00A651 !important; }
+    /* Cards & Metrics */
+    div[data-testid="stMetric"] {{
+        background-color: {card_bg}; padding: 15px; border-radius: 10px;
+        border-left: 5px solid {accent_green};
+    }}
+    div[data-testid="stMetricValue"] {{ color: {accent_green} !important; }}
+    label[data-testid="stMetricLabel"] {{ color: {text_color} !important; opacity: 0.8; }}
     
-    /* Buttons and Sidebar */
-    .stButton>button {
-        background-color: #00A651;
-        color: white;
-        border-radius: 5px;
-    }
-    .css-17l2qt2 { background-color: #111111; } /* Sidebar color */
+    /* Navigation Style */
+    .stRadio > label {{ color: {text_color} !important; font-weight: bold; }}
     </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------
-# 🛰️ Top Navigation & User Pill
+# 🛰️ Top Navigation Header
 # -------------------------------
-st.markdown("""
+st.markdown(f"""
     <div class="top-header">
         <div class="greeting">👋 Hello, Admin</div>
-        <div class="user-pill">MTN Network Operations • Online</div>
+        <div class="user-pill">MTN Admin Portal • Online</div>
     </div>
 """, unsafe_allow_html=True)
 
 # -------------------------------
-# 📂 Sidebar Navigation
+# 📂 Sidebar Content
 # -------------------------------
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/MTN_Logo.svg/800px-MTN_Logo.svg.png", width=80)
-    st.title("Navigation")
-    page = st.radio("Go to:", ["📊 Dashboard", "🔍 Predictive Analysis", "📋 Customer Data"])
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/MTN_Logo.svg/800px-MTN_Logo.svg.png", width=60)
+    st.title("Main Menu")
     
-    st.divider()
-    st.header("🔎 Filters")
-    df = load_data()
+    # Page Navigation
+    page = st.radio("Navigation", ["📊 Dashboard", "🔍 Predictions", "📋 Raw Data"])
     
-    # Dynamic Filters
-    states = st.multiselect("State", sorted(df["State"].unique()), default=sorted(df["State"].unique())[:5])
-    plans = st.multiselect("Subscription Plan", sorted(df["Subscription Plan"].unique()), default=sorted(df["Subscription Plan"].unique()))
-    churn_status = st.multiselect("Churn Status", sorted(df["Customer Churn Status"].unique()), default=sorted(df["Customer Churn Status"].unique()))
+    st.vsplit() # Spacer
+    
+    # 🌓 Theme Toggle at the bottom
+    st.markdown("---")
+    theme_choice = st.toggle("🌙 Dark Mode", value=(st.session_state.theme == 'Dark'))
+    st.session_state.theme = 'Dark' if theme_choice else 'Light'
 
-# Apply Global Filters
-filtered_df = df[
-    (df["State"].isin(states)) &
-    (df["Subscription Plan"].isin(plans)) &
-    (df["Customer Churn Status"].isin(churn_status))
-]
+# Load Data
+df = load_data()
 
 # -------------------------------
-# 🚀 Page Routing Logic
+# 📊 Dashboard Page
 # -------------------------------
-
 if page == "📊 Dashboard":
-    st.title("Customer Churn Dashboard")
+    # Sidebar Filters (Dashboard specific)
+    with st.sidebar:
+        st.subheader("🔎 Filters")
+        states = st.multiselect("State", sorted(df["State"].unique()), default=sorted(df["State"].unique())[:5])
+        plans = st.multiselect("Plan", sorted(df["Subscription Plan"].unique()), default=sorted(df["Subscription Plan"].unique()))
+
+    filtered_df = df[(df["State"].isin(states)) & (df["Subscription Plan"].isin(plans))]
     metrics = get_metrics(filtered_df)
 
-    # Metrics Row
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Customers", metrics["total_customers"])
-    m2.metric("Churned", metrics["churned_customers"])
-    m3.metric("Churn Rate", f"{metrics['churn_rate']}%")
-    m4.metric("Revenue Impact", f"₦{metrics['total_revenue']:,}")
+    # 1. KPIs
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Customers", metrics["total_customers"])
+    c2.metric("Churned", metrics["churned_customers"])
+    c3.metric("Churn Rate", f"{metrics['churn_rate']}%")
+    c4.metric("Revenue", f"₦{metrics['total_revenue']:,}")
 
-    st.divider()
-
-    # Charts Row 1
-    c1, c2 = st.columns(2)
-
-    with c1:
-        st.subheader("📊 Churn by Subscription Plan")
-        # FIXED: Using correct column names from your CSV
-        sub_churn_data = filtered_df.groupby(['Subscription Plan', 'Customer Churn Status']).size().unstack(fill_value=0)
+    st.markdown("### 📈 Visual Analytics")
+    
+    col_a, col_b = st.columns(2)
+    
+    with col_a:
+        st.subheader("Churn by Plan")
+        # FIXED: Using exact CSV column names
+        sub_churn = filtered_df.groupby(['Subscription Plan', 'Customer Churn Status']).size().unstack(fill_value=0)
         
-        fig1, ax1 = plt.subplots(figsize=(8, 5))
-        sub_churn_data.plot(kind='bar', stacked=True, ax=ax1, color=['#111111', '#00A651'])
-        ax1.set_title("Subscription Retention vs Churn")
-        ax1.set_ylabel("Customer Count")
-        plt.xticks(rotation=45, ha='right')
+        fig1, ax1 = plt.subplots(facecolor=bg_color)
+        sub_churn.plot(kind='bar', stacked=True, ax=ax1, color=['#333333', accent_green])
+        ax1.set_facecolor(bg_color)
+        ax1.tick_params(colors=text_color)
+        ax1.xaxis.label.set_color(text_color)
+        ax1.yaxis.label.set_color(text_color)
         st.pyplot(fig1)
 
-    with c2:
-        st.subheader("🥧 Churn Distribution")
-        churn_dist = filtered_df["Customer Churn Status"].value_counts()
-        fig2, ax2 = plt.subplots()
-        ax2.pie(churn_dist, labels=churn_dist.index, autopct="%1.1f%%", startangle=90, colors=['#f0f2f6', '#00A651'])
+    with col_b:
+        st.subheader("Churn Proportion")
+        dist = filtered_df["Customer Churn Status"].value_counts()
+        fig2, ax2 = plt.subplots(facecolor=bg_color)
+        ax2.pie(dist, labels=dist.index, autopct="%1.1f%%", colors=[accent_green, '#f0f2f6'], textprops={'color': text_color})
         st.pyplot(fig2)
 
-    # Charts Row 2
+    # Monthly Trend
     st.subheader("📉 Monthly Churn Trend")
-    monthly_churn = get_monthly_churn(filtered_df)
-    
-    fig3, ax3 = plt.subplots(figsize=(12, 4))
-    ax3.bar(monthly_churn.index.astype(str), monthly_churn.values, color="#00A651")
-    ax3.set_ylabel("Customers Leaving")
-    ax3.grid(axis='y', linestyle='--', alpha=0.3)
+    monthly = get_monthly_churn(filtered_df)
+    fig3, ax3 = plt.subplots(figsize=(10, 3), facecolor=bg_color)
+    ax3.bar(monthly.index.astype(str), monthly.values, color=accent_green)
+    ax3.set_facecolor(card_bg)
+    ax3.tick_params(colors=text_color)
     st.pyplot(fig3)
 
-elif page == "🔍 Predictive Analysis":
-    st.title("Predictive Insights")
-    st.info("This section uses the Logistic Regression model to identify high-risk customers.")
-    
-    # Example table of high-risk customers
-    high_risk = filtered_df[filtered_df["Satisfaction Rate"] <= 2].head(10)
-    st.subheader("⚠️ Top 10 High-Risk Customers (Low Satisfaction)")
-    st.table(high_risk[["Full Name", "State", "Satisfaction Rate", "Total Revenue"]])
+elif page == "🔍 Predictions":
+    st.title("Predictive Modeling")
+    st.warning("Logistic Regression Model: Active")
+    st.write("Below are customers flagged as high-risk based on satisfaction rates.")
+    high_risk = df[df["Satisfaction Rate"] <= 2]
+    st.dataframe(high_risk[["Full Name", "Subscription Plan", "Satisfaction Rate", "Total Revenue"]], use_container_width=True)
 
-elif page == "📋 Customer Data":
+elif page == "📋 Raw Data":
     st.title("Customer Database")
-    st.write(f"Showing {len(filtered_df)} records based on current filters.")
-    st.dataframe(filtered_df, use_container_width=True)
+    st.dataframe(df, use_container_width=True)
