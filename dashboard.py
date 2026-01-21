@@ -115,21 +115,16 @@ col5.metric("Total Revenue", metrics["total_revenue"])
 # 📊 CHURN BY SUBSCRIPTION PLAN (BAR CHART)
 # ======================================================
 st.subheader("📊 Churn by Subscription Plan")
+# This creates a "Stacked Bar Chart" showing Churned vs Stayed for each plan
+sub_churn_data = filtered_df.groupby(['SubscriptionType', 'Churn']).size().unstack()
 
-churn_by_plan = (
-    filtered_df[filtered_df["Customer Churn Status"] == "Yes"]
-    .groupby("Subscription Plan")
-    .size()
-)
+fig5, ax5 = plt.subplots()
+sub_churn_data.plot(kind='bar', stacked=True, ax=ax5, color=['#2ecc71', '#e74c3c'])
 
-fig1, ax1 = plt.subplots()
-churn_by_plan.plot(kind="bar", ax=ax1)
-ax1.set_xlabel("Subscription Plan")
-ax1.set_ylabel("Number of Churned Customers")
-ax1.set_title("Churned Customers by Subscription Plan")
-plt.xticks(rotation=45)
+ax5.set_title("Churn status by Subscription Type")
+st.pyplot(fig5)
 
-st.pyplot(fig1)
+
 
 # ======================================================
 # 🥧 CHURN DISTRIBUTION (PIE CHART)
@@ -153,16 +148,25 @@ st.pyplot(fig2)
 # 📉 Monthly Churn Trend
 # ======================================================
 st.subheader("📉 Monthly Customer Churn")
-
 monthly_churn = get_monthly_churn(filtered_df)
 
+# Create the figure and axis
 fig3, ax3 = plt.subplots()
-ax3.plot(monthly_churn.index, monthly_churn.values, marker="o")
+
+# Use ax3.bar instead of ax3.plot
+ax3.bar(monthly_churn.index, monthly_churn.values, color="skyblue")
+
+# Set labels and title
 ax3.set_xlabel("Month")
 ax3.set_ylabel("Customers Leaving")
 ax3.set_title("Customers Leaving Per Month")
 
+# Optional: Rotate x-axis labels if they overlap
+plt.xticks(rotation=45)
+
+# Display the plot in Streamlit (remember to close the parenthesis)
 st.pyplot(fig3)
+
 
 # -------------------------------
 # Dataset Preview
