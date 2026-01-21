@@ -1,0 +1,5 @@
+streamlit
+pandas
+matplotlib
+scikit-learn
+C:\Users\USER@DESKTOP-9AJVNGG\AppData\Local\Programs\Python\Python314\python.exe -m pip install --upgrade pip

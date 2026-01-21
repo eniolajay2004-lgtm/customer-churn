@@ -3,15 +3,109 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from backend import load_data, get_metrics, get_monthly_churn
 
-st.set_page_config(page_title="Telecom Customer Churn Dashboard")
+# -------------------------------
+# Page Configuration
+# -------------------------------
+st.set_page_config(
+    page_title="Telecom Customer Churn Dashboard",
+    layout="wide"
+)
 
-st.title("📊 Telecom Customer Churn Dashboard")
+# -------------------------------
+# Custom CSS Styling
+# -------------------------------
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #f4f6f9;
+    }
+    .header {
+        background-color: #0a3d62;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+    .header h1 {
+        color: white;
+        text-align: center;
+        font-size: 40px;
+    }
+    .header p {
+        color: #dcdde1;
+        text-align: center;
+        font-size: 18px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-# Load data
+# -------------------------------
+# Header
+# -------------------------------
+st.markdown(
+    """
+    <div class="header">
+        <h1>📊 Telecom Customer Churn Dashboard</h1>
+        <p>Interactive Customer Churn Analysis</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# -------------------------------
+# Load Data
+# -------------------------------
 df = load_data()
 
-# Metrics
-metrics = get_metrics(df)
+# -------------------------------
+# SIDEBAR FILTERS
+# -------------------------------
+st.sidebar.header("🔎 Filter Options")
+
+# State filter
+states = st.sidebar.multiselect(
+    "Select State",
+    options=sorted(df["State"].unique()),
+    default=sorted(df["State"].unique())
+)
+
+# Subscription Plan filter
+plans = st.sidebar.multiselect(
+    "Select Subscription Plan",
+    options=sorted(df["Subscription Plan"].unique()),
+    default=sorted(df["Subscription Plan"].unique())
+)
+
+# Device filter
+devices = st.sidebar.multiselect(
+    "Select MTN Device",
+    options=sorted(df["MTN Device"].unique()),
+    default=sorted(df["MTN Device"].unique())
+)
+
+# Churn status filter
+churn_status = st.sidebar.multiselect(
+    "Select Churn Status",
+    options=sorted(df["Customer Churn Status"].unique()),
+    default=sorted(df["Customer Churn Status"].unique())
+)
+
+# -------------------------------
+# Apply Filters
+# -------------------------------
+filtered_df = df[
+    (df["State"].isin(states)) &
+    (df["Subscription Plan"].isin(plans)) &
+    (df["MTN Device"].isin(devices)) &
+    (df["Customer Churn Status"].isin(churn_status))
+]
+
+# -------------------------------
+# Metrics (Filtered Data)
+# -------------------------------
+metrics = get_metrics(filtered_df)
 
 col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -21,19 +115,24 @@ col3.metric("Churn Rate (%)", metrics["churn_rate"])
 col4.metric("Avg Tenure (Months)", metrics["average_tenure"])
 col5.metric("Total Revenue", metrics["total_revenue"])
 
-# Monthly churn chart
+# -------------------------------
+# Monthly Churn Chart (Filtered)
+# -------------------------------
 st.subheader("📉 Monthly Customer Churn")
 
-monthly_churn = get_monthly_churn(df)
+monthly_churn = get_monthly_churn(filtered_df)
 
 fig, ax = plt.subplots()
 ax.plot(monthly_churn.index, monthly_churn.values, marker="o")
 ax.set_xlabel("Month")
 ax.set_ylabel("Customers Leaving")
 ax.set_title("Customers Leaving Per Month")
+plt.xticks(rotation=45)
 
 st.pyplot(fig)
 
-# Show data
-st.subheader("📋 Dataset Preview")
-st.dataframe(df.head(20))
+# -------------------------------
+# Dataset Preview
+# -------------------------------
+st.subheader("📋 Filtered Dataset Preview")
+st.dataframe(filtered_df.head(20))
