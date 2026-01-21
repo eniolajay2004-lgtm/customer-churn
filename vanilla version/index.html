@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Telecom Customer Churn Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>📊 Telecom Customer Churn Dashboard</h1>
+        <p>Customer Churn Prediction & Monthly Analysis</p>
+    </header>
+
+    <section class="stats">
+        <div class="card">
+            <h3>Total Customers</h3>
+            <p id="totalCustomers">5,000</p>
+        </div>
+        <div class="card">
+            <h3>Total Churned</h3>
+            <p id="totalChurned">820</p>
+        </div>
+        <div class="card">
+            <h3>Churn Rate</h3>
+            <p id="churnRate">16.4%</p>
+        </div>
+    </section>
+
+    <section class="chart-container">
+        <h2>Monthly Customer Churn</h2>
+        <canvas id="churnChart"></canvas>
+    </section>
+
+    <footer>
+        <p>Final Year Project – Customer Churn Prediction (Telecom)</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
