@@ -5,10 +5,11 @@ body {
 }
 
 header {
-    background: #0a3d62;
+    background: linear-gradient(45deg, black, green);
     color: white;
     padding: 20px;
     text-align: center;
+    font-family: math;
 }
 
 .stats {
@@ -48,4 +49,8 @@ footer {
     padding: 10px;
     background: #ddd;
     margin-top: 20px;
+}
+footer p {
+    margin: 0;
+    color: #333;
 }

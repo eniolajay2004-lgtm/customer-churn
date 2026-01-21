@@ -10,7 +10,7 @@ const churnChart = new Chart(ctx, {
         datasets: [{
             label: 'Number of Customers Who Left',
             data: [45, 60, 55, 70, 80, 65, 90, 85, 75, 95, 110, 90],
-            borderColor: '#e74c3c',
+            borderColor: '#0fe328ff',
             backgroundColor: 'rgba(231, 76, 60, 0.2)',
             borderWidth: 2,
             tension: 0.3,
