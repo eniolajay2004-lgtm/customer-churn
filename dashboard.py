@@ -4,172 +4,145 @@ import matplotlib.pyplot as plt
 from backend import load_data, get_metrics, get_monthly_churn
 
 # -------------------------------
-# Page Configuration
+# 🎨 Page Configuration & Styling
 # -------------------------------
-st.set_page_config(
-    page_title="Telecom Customer Churn Dashboard",
-    layout="wide"
-)
+st.set_page_config(page_title="MTN Churn Analytics", layout="wide")
 
-# -------------------------------
-# Custom CSS Styling
-# -------------------------------
-st.markdown(
-    """
+# Custom CSS for Industry Standard Look (Green, White, Black)
+st.markdown("""
     <style>
-    .stApp {
-        background-color: #f4f6f9;
+    :set_root {
+        --main-green: #00A651;
+        --dark-bg: #111111;
     }
-    .header {
-        background-color: #0C2C55;
-        padding: 25px;
-        border-radius: 10px;
-        margin-bottom: 30px;
+    .stApp { background-color: #FFFFFF; }
+    
+    /* Top Navigation Bar */
+    .top-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: white;
+        border-bottom: 2px solid #f0f2f6;
+        margin-bottom: 25px;
     }
-    .header h1 {
+    .user-pill {
+        background-color: #00A651;
         color: white;
-        text-align: center;
-        font-size: 40px;
+        padding: 5px 15px;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 14px;
     }
-    .header p {
-        color: #dcdde1;
-        text-align: center;
-        font-size: 18px;
+    .greeting { font-size: 24px; font-weight: bold; color: #111111; }
+    
+    /* Metric Cards */
+    div[data-testid="stMetricValue"] { color: #00A651 !important; }
+    
+    /* Buttons and Sidebar */
+    .stButton>button {
+        background-color: #00A651;
+        color: white;
+        border-radius: 5px;
     }
+    .css-17l2qt2 { background-color: #111111; } /* Sidebar color */
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 # -------------------------------
-# Header
+# 🛰️ Top Navigation & User Pill
 # -------------------------------
-st.markdown(
-    """
-    <div class="header">
-        <h1>📊 Telecom Customer Churn Dashboard</h1>
-        <p>Interactive Customer Churn Analysis</p>
+st.markdown("""
+    <div class="top-header">
+        <div class="greeting">👋 Hello, Admin</div>
+        <div class="user-pill">MTN Network Operations • Online</div>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 # -------------------------------
-# Load Data
+# 📂 Sidebar Navigation
 # -------------------------------
-df = load_data()
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/MTN_Logo.svg/800px-MTN_Logo.svg.png", width=80)
+    st.title("Navigation")
+    page = st.radio("Go to:", ["📊 Dashboard", "🔍 Predictive Analysis", "📋 Customer Data"])
+    
+    st.divider()
+    st.header("🔎 Filters")
+    df = load_data()
+    
+    # Dynamic Filters
+    states = st.multiselect("State", sorted(df["State"].unique()), default=sorted(df["State"].unique())[:5])
+    plans = st.multiselect("Subscription Plan", sorted(df["Subscription Plan"].unique()), default=sorted(df["Subscription Plan"].unique()))
+    churn_status = st.multiselect("Churn Status", sorted(df["Customer Churn Status"].unique()), default=sorted(df["Customer Churn Status"].unique()))
 
-# -------------------------------
-# Sidebar Filters
-# -------------------------------
-st.sidebar.header("🔎 Filter Options")
-
-states = st.sidebar.multiselect(
-    "Select State",
-    options=sorted(df["State"].unique()),
-    default=sorted(df["State"].unique())
-)
-
-plans = st.sidebar.multiselect(
-    "Select Subscription Plan",
-    options=sorted(df["Subscription Plan"].unique()),
-    default=sorted(df["Subscription Plan"].unique())
-)
-
-devices = st.sidebar.multiselect(
-    "Select MTN Device",
-    options=sorted(df["MTN Device"].unique()),
-    default=sorted(df["MTN Device"].unique())
-)
-
-churn_status = st.sidebar.multiselect(
-    "Select Churn Status",
-    options=sorted(df["Customer Churn Status"].unique()),
-    default=sorted(df["Customer Churn Status"].unique())
-)
-
-# -------------------------------
-# Apply Filters
-# -------------------------------
+# Apply Global Filters
 filtered_df = df[
     (df["State"].isin(states)) &
     (df["Subscription Plan"].isin(plans)) &
-    (df["MTN Device"].isin(devices)) &
     (df["Customer Churn Status"].isin(churn_status))
 ]
 
 # -------------------------------
-# Metrics
+# 🚀 Page Routing Logic
 # -------------------------------
-metrics = get_metrics(filtered_df)
 
-col1, col2, col3, col4, col5 = st.columns(5)
+if page == "📊 Dashboard":
+    st.title("Customer Churn Dashboard")
+    metrics = get_metrics(filtered_df)
 
-col1.metric("Total Customers", metrics["total_customers"])
-col2.metric("Churned Customers", metrics["churned_customers"])
-col3.metric("Churn Rate (%)", metrics["churn_rate"])
-col4.metric("Avg Tenure (Months)", metrics["average_tenure"])
-col5.metric("Total Revenue", metrics["total_revenue"])
+    # Metrics Row
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Customers", metrics["total_customers"])
+    m2.metric("Churned", metrics["churned_customers"])
+    m3.metric("Churn Rate", f"{metrics['churn_rate']}%")
+    m4.metric("Revenue Impact", f"₦{metrics['total_revenue']:,}")
 
-# ======================================================
-# 📊 CHURN BY SUBSCRIPTION PLAN (BAR CHART)
-# ======================================================
-st.subheader("📊 Churn by Subscription Plan")
-# This creates a "Stacked Bar Chart" showing Churned vs Stayed for each plan
-sub_churn_data = filtered_df.groupby(['SubscriptionType', 'Churn']).size().unstack()
+    st.divider()
 
-fig5, ax5 = plt.subplots()
-sub_churn_data.plot(kind='bar', stacked=True, ax=ax5, color=['#2ecc71', '#e74c3c'])
+    # Charts Row 1
+    c1, c2 = st.columns(2)
 
-ax5.set_title("Churn status by Subscription Type")
-st.pyplot(fig5)
+    with c1:
+        st.subheader("📊 Churn by Subscription Plan")
+        # FIXED: Using correct column names from your CSV
+        sub_churn_data = filtered_df.groupby(['Subscription Plan', 'Customer Churn Status']).size().unstack(fill_value=0)
+        
+        fig1, ax1 = plt.subplots(figsize=(8, 5))
+        sub_churn_data.plot(kind='bar', stacked=True, ax=ax1, color=['#111111', '#00A651'])
+        ax1.set_title("Subscription Retention vs Churn")
+        ax1.set_ylabel("Customer Count")
+        plt.xticks(rotation=45, ha='right')
+        st.pyplot(fig1)
 
+    with c2:
+        st.subheader("🥧 Churn Distribution")
+        churn_dist = filtered_df["Customer Churn Status"].value_counts()
+        fig2, ax2 = plt.subplots()
+        ax2.pie(churn_dist, labels=churn_dist.index, autopct="%1.1f%%", startangle=90, colors=['#f0f2f6', '#00A651'])
+        st.pyplot(fig2)
 
+    # Charts Row 2
+    st.subheader("📉 Monthly Churn Trend")
+    monthly_churn = get_monthly_churn(filtered_df)
+    
+    fig3, ax3 = plt.subplots(figsize=(12, 4))
+    ax3.bar(monthly_churn.index.astype(str), monthly_churn.values, color="#00A651")
+    ax3.set_ylabel("Customers Leaving")
+    ax3.grid(axis='y', linestyle='--', alpha=0.3)
+    st.pyplot(fig3)
 
-# ======================================================
-# 🥧 CHURN DISTRIBUTION (PIE CHART)
-# ======================================================
-st.subheader("🥧 Churn Distribution")
+elif page == "🔍 Predictive Analysis":
+    st.title("Predictive Insights")
+    st.info("This section uses the Logistic Regression model to identify high-risk customers.")
+    
+    # Example table of high-risk customers
+    high_risk = filtered_df[filtered_df["Satisfaction Rate"] <= 2].head(10)
+    st.subheader("⚠️ Top 10 High-Risk Customers (Low Satisfaction)")
+    st.table(high_risk[["Full Name", "State", "Satisfaction Rate", "Total Revenue"]])
 
-churn_distribution = filtered_df["Customer Churn Status"].value_counts()
-
-fig2, ax2 = plt.subplots()
-ax2.pie(
-    churn_distribution,
-    labels=churn_distribution.index,
-    autopct="%1.1f%%",
-    startangle=90
-)
-ax2.set_title("Customer Churn Distribution")
-
-st.pyplot(fig2)
-
-# ======================================================
-# 📉 Monthly Churn Trend
-# ======================================================
-st.subheader("📉 Monthly Customer Churn")
-monthly_churn = get_monthly_churn(filtered_df)
-
-# Create the figure and axis
-fig3, ax3 = plt.subplots()
-
-# Use ax3.bar instead of ax3.plot
-ax3.bar(monthly_churn.index, monthly_churn.values, color="skyblue")
-
-# Set labels and title
-ax3.set_xlabel("Month")
-ax3.set_ylabel("Customers Leaving")
-ax3.set_title("Customers Leaving Per Month")
-
-# Optional: Rotate x-axis labels if they overlap
-plt.xticks(rotation=45)
-
-# Display the plot in Streamlit (remember to close the parenthesis)
-st.pyplot(fig3)
-
-
-# -------------------------------
-# Dataset Preview
-# -------------------------------
-st.subheader("📋 Filtered Dataset Preview")
-st.dataframe(filtered_df.head(20))
+elif page == "📋 Customer Data":
+    st.title("Customer Database")
+    st.write(f"Showing {len(filtered_df)} records based on current filters.")
+    st.dataframe(filtered_df, use_container_width=True)
